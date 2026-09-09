@@ -1,14 +1,11 @@
 """
 Student-facing endpoints (require an authenticated student).
 """
-from datetime import datetime, date as date_cls
-from zoneinfo import ZoneInfo
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.dependencies import get_current_student
-from core.config import settings
 from models.schemas import AttendanceHistoryResponse, ChangePasswordRequest, StudentOut
+from services import attendance_stats
 from services.supabase_client import get_anon_client, get_service_client
 
 router = APIRouter(prefix="/students", tags=["students"])
@@ -18,24 +15,6 @@ router = APIRouter(prefix="/students", tags=["students"])
 def get_my_profile(student: dict = Depends(get_current_student)):
     """Returns the profile of the currently authenticated student."""
     return student
-
-
-def _count_business_days(start: date_cls, end: date_cls) -> int:
-    """
-    Counts Monday-to-Friday business days between two dates inclusive.
-    Used as the denominator for the attendance percentage, since interns
-    are only expected to check in on working days.
-    """
-    if end < start:
-        return 0
-    total = 0
-    current = start
-    one_day = 1
-    while current <= end:
-        if current.weekday() < 5:  # Monday=0 ... Sunday=6
-            total += 1
-        current = date_cls.fromordinal(current.toordinal() + one_day)
-    return total
 
 
 @router.get("/me/history", response_model=AttendanceHistoryResponse)
@@ -54,39 +33,9 @@ def get_my_history(student: dict = Depends(get_current_student)):
         .execute()
     )
     records = result.data or []
+    summary = attendance_stats.summarize_records(records, student.get("created_at"))
 
-    total_present = sum(1 for r in records if r.get("status") == "present")
-    total_late = sum(1 for r in records if r.get("status") == "late")
-
-    created_at_raw = student.get("created_at")
-    today_local = datetime.now(ZoneInfo(settings.CODINEX_TIMEZONE)).date()
-
-    if created_at_raw:
-        try:
-            registration_date = datetime.fromisoformat(
-                str(created_at_raw).replace("Z", "+00:00")
-            ).date()
-        except ValueError:
-            registration_date = today_local
-    else:
-        registration_date = today_local
-
-    expected_days = _count_business_days(registration_date, today_local)
-    total_absent = max(expected_days - (total_present + total_late), 0)
-
-    attendance_percentage = (
-        round(((total_present + total_late) / expected_days) * 100, 2)
-        if expected_days > 0
-        else 0.0
-    )
-
-    return AttendanceHistoryResponse(
-        records=records,
-        total_present=total_present,
-        total_late=total_late,
-        total_absent=total_absent,
-        attendance_percentage=attendance_percentage,
-    )
+    return AttendanceHistoryResponse(records=records, **summary)
 
 
 @router.post("/me/change-password")

@@ -10,6 +10,7 @@ from api.dependencies import WifiCheckResult, get_current_student, verify_office
 from core.config import settings
 from core.security import get_current_qr_token, verify_qr_token
 from models.schemas import AttendanceCheckInRequest, AttendanceOut, QRTokenResponse
+from services.settings_service import get_system_settings
 from services.supabase_client import get_service_client
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
@@ -24,17 +25,18 @@ def _local_now() -> datetime:
     return datetime.now(ZoneInfo(settings.CODINEX_TIMEZONE))
 
 
-def _resolve_status(local_now: datetime) -> str:
+def _resolve_status(local_now: datetime, present_cutoff_time: str, late_cutoff_time: str) -> str:
     """
-    Determines present/late status from the configured cutoff times.
-    Check-in is expected to be closed on the frontend/kiosk side after the
-    late cutoff; a check-in that still reaches the backend after that time
-    is recorded as late rather than rejected, so late arrivals are still
-    captured for reporting purposes.
+    Determines present/late status from the admin-configured cutoff times
+    (system_settings, editable from the dashboard). Check-in is expected
+    to be closed on the frontend/kiosk side after the late cutoff; a
+    check-in that still reaches the backend after that time is recorded
+    as late rather than rejected, so late arrivals are still captured for
+    reporting purposes.
     """
     current_time = local_now.time()
-    present_cutoff = _parse_cutoff(settings.PRESENT_CUTOFF_TIME)
-    late_cutoff = _parse_cutoff(settings.LATE_CUTOFF_TIME)
+    present_cutoff = _parse_cutoff(present_cutoff_time)
+    late_cutoff = _parse_cutoff(late_cutoff_time)
 
     if current_time <= present_cutoff:
         return "present"
@@ -119,7 +121,12 @@ def check_in(
         )
 
     device_info = request.headers.get("user-agent", "unknown")
-    attendance_status = _resolve_status(local_now)
+    system_settings = get_system_settings()
+    attendance_status = _resolve_status(
+        local_now,
+        system_settings.get("present_cutoff_time", settings.PRESENT_CUTOFF_TIME),
+        system_settings.get("late_cutoff_time", settings.LATE_CUTOFF_TIME),
+    )
 
     try:
         insert_result = (

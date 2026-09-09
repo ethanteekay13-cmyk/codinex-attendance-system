@@ -193,6 +193,25 @@
             <button id="disable-override-btn" class="btn btn-outline" style="display: none;">Turn off override now</button>
           </div>
         </div>
+
+        <div class="mt-6">
+          <h3>Present / late cutoff times</h3>
+          <form id="cutoff-times-form" novalidate>
+            <div class="form-grid">
+              <div class="field">
+                <label for="present-cutoff-input">Present cutoff</label>
+                <input type="time" id="present-cutoff-input" required />
+                <div class="hint">Check in at or before this time counts as present.</div>
+              </div>
+              <div class="field">
+                <label for="late-cutoff-input">Late cutoff</label>
+                <input type="time" id="late-cutoff-input" required />
+                <div class="hint">Check in after present but at or before this time counts as late.</div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save cutoff times</button>
+          </form>
+        </div>
       </div>
 
       <div class="card mt-6">
@@ -225,6 +244,7 @@
           <h2>Students</h2>
           <input type="search" id="student-search" class="search-input" placeholder="Search by name, registration number, or email" />
         </div>
+        <p class="text-muted">Click a student to view their full attendance history, or to delete their history or account.</p>
         <div id="students-banner" class="banner"></div>
         <div class="table-wrap">
           <table class="data-table">
@@ -236,6 +256,7 @@
                 <th>Email</th>
                 <th>Phone number</th>
                 <th>Status</th>
+                <th>Attendance %</th>
               </tr>
             </thead>
             <tbody id="students-tbody"></tbody>
@@ -247,6 +268,79 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <div id="student-detail-overlay" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="student-detail-name">Student</h2>
+          <p class="text-muted mono" style="margin: 0;">
+            <span id="student-detail-reg"></span> - <span id="student-detail-university"></span>
+          </p>
+        </div>
+        <button id="student-detail-close-btn" class="modal-close-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <div id="student-detail-banner" class="banner"></div>
+
+      <div class="profile-row" style="margin-bottom: var(--space-4);">
+        <div id="student-detail-ring" class="ring" style="--ring-size: 110px; --ring-thickness: 10px;">
+          <div class="ring-value">
+            <span id="student-detail-ring-value" class="ring-value-number">0%</span>
+            <span class="ring-value-label">attendance</span>
+          </div>
+        </div>
+        <div class="profile-details">
+          <dl>
+            <dt>Email</dt>
+            <dd id="student-detail-email"></dd>
+            <dt>Phone number</dt>
+            <dd id="student-detail-phone"></dd>
+          </dl>
+          <div class="stat-row">
+            <div>
+              <div class="stat-value" id="student-detail-present">0</div>
+              <div class="stat-label">Present</div>
+            </div>
+            <div>
+              <div class="stat-value" id="student-detail-late">0</div>
+              <div class="stat-label">Late</div>
+            </div>
+            <div>
+              <div class="stat-value" id="student-detail-absent">0</div>
+              <div class="stat-label">Absent</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Check-in history</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Check-in time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="student-detail-history-tbody"></tbody>
+        </table>
+      </div>
+      <div id="student-detail-history-empty" class="empty-state" style="display: none;">
+        <h3>No check-ins yet</h3>
+      </div>
+
+      <div class="modal-danger-zone">
+        <h3>Danger zone</h3>
+        <p class="text-muted">These actions cannot be undone.</p>
+        <div class="flex-row">
+          <button id="delete-history-btn" class="btn btn-outline">Delete attendance history</button>
+          <button id="delete-student-btn" class="btn" style="background: var(--color-danger); color: var(--color-text-inverse);">Delete student</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="js/admin_dashboard.js"></script>

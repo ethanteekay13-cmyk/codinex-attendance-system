@@ -13,16 +13,19 @@ from fastapi.responses import StreamingResponse
 from api.dependencies import get_current_admin
 from core.config import settings
 from models.schemas import (
+    AttendanceHistoryResponse,
     DashboardSummary,
     StudentCreate,
+    StudentDetailResponse,
     StudentImportRowResult,
     StudentImportSummary,
     StudentOut,
     SystemSettingsOut,
     TodayAttendanceRow,
+    UpdateCutoffTimesRequest,
     UpdateOfficeIpsRequest,
 )
-from services import settings_service
+from services import attendance_stats, settings_service
 from services.supabase_client import get_service_client
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -145,6 +148,38 @@ def update_office_ips(payload: UpdateOfficeIpsRequest, admin: dict = Depends(get
     return settings_service.update_office_ips(payload.office_ips)
 
 
+def _looks_like_hh_mm(value: str) -> bool:
+    try:
+        hour, minute = value.split(":")
+        return 0 <= int(hour) <= 23 and 0 <= int(minute) <= 59
+    except (ValueError, AttributeError):
+        return False
+
+
+@router.put("/settings/cutoff-times", response_model=SystemSettingsOut)
+def update_cutoff_times(payload: UpdateCutoffTimesRequest, admin: dict = Depends(get_current_admin)):
+    """
+    Updates the present/late check-in cutoff times, replacing the
+    PRESENT_CUTOFF_TIME/LATE_CUTOFF_TIME environment variables as the
+    source of truth. Takes effect on the next check-in - no redeploy.
+    """
+    if not _looks_like_hh_mm(payload.present_cutoff_time) or not _looks_like_hh_mm(
+        payload.late_cutoff_time
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cutoff times must be in 24-hour HH:MM format, e.g. '09:00'",
+        )
+    if payload.late_cutoff_time < payload.present_cutoff_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The late cutoff must not be earlier than the present cutoff",
+        )
+    return settings_service.update_cutoff_times(
+        payload.present_cutoff_time, payload.late_cutoff_time
+    )
+
+
 @router.post("/settings/wifi-override/enable", response_model=SystemSettingsOut)
 def enable_wifi_override(admin: dict = Depends(get_current_admin)):
     """
@@ -214,11 +249,13 @@ def list_students(
     search: Optional[str] = Query(default=None, description="Search by name, registration number, or email"),
     admin: dict = Depends(get_current_admin),
 ):
-    """Lists all registered students, optionally filtered by a search term."""
+    """
+    Lists all registered students, optionally filtered by a search term.
+    Each student's attendance percentage is computed in bulk from a
+    single attendance-table query rather than one query per student.
+    """
     service_client = get_service_client()
-    query = service_client.table("students").select("*").order("full_name")
-
-    result = query.execute()
+    result = service_client.table("students").select("*").order("full_name").execute()
     students = result.data or []
 
     if search:
@@ -231,7 +268,103 @@ def list_students(
             or term in (s.get("email") or "").lower()
         ]
 
+    if students:
+        attendance_result = (
+            service_client.table("attendance").select("student_id, status").execute()
+        )
+        percentages = attendance_stats.bulk_percentages_by_student(
+            students, attendance_result.data or []
+        )
+        for student in students:
+            student["attendance_percentage"] = percentages.get(student["student_id"], 0.0)
+
     return students
+
+
+@router.get("/students/{student_id}", response_model=StudentDetailResponse)
+def get_student_detail(student_id: str, admin: dict = Depends(get_current_admin)):
+    """
+    Returns one student's profile plus their full check-in history and
+    attendance percentage - the admin dashboard's "click a student" view.
+    """
+    service_client = get_service_client()
+    student_result = (
+        service_client.table("students").select("*").eq("student_id", student_id).limit(1).execute()
+    )
+    if not student_result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+    student = student_result.data[0]
+
+    attendance_result = (
+        service_client.table("attendance")
+        .select("*")
+        .eq("student_id", student_id)
+        .order("date", desc=True)
+        .execute()
+    )
+    records = attendance_result.data or []
+    summary = attendance_stats.summarize_records(records, student.get("created_at"))
+    student["attendance_percentage"] = summary["attendance_percentage"]
+
+    return StudentDetailResponse(
+        student=student,
+        history=AttendanceHistoryResponse(records=records, **summary),
+    )
+
+
+@router.delete("/students/{student_id}/history")
+def delete_student_history(student_id: str, admin: dict = Depends(get_current_admin)):
+    """
+    Deletes all attendance records for one student while keeping their
+    account and profile intact. Use this to correct a mistaken import or
+    give a student a clean slate, without removing their login.
+    """
+    service_client = get_service_client()
+    student_result = (
+        service_client.table("students").select("student_id").eq("student_id", student_id).limit(1).execute()
+    )
+    if not student_result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    service_client.table("attendance").delete().eq("student_id", student_id).execute()
+    return {"detail": "Attendance history deleted"}
+
+
+@router.delete("/students/{student_id}")
+def delete_student(student_id: str, admin: dict = Depends(get_current_admin)):
+    """
+    Permanently deletes a student: their attendance history, their
+    students-table profile, and their Supabase Auth login. This cannot be
+    undone.
+    """
+    service_client = get_service_client()
+    student_result = (
+        service_client.table("students").select("*").eq("student_id", student_id).limit(1).execute()
+    )
+    if not student_result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+    student = student_result.data[0]
+
+    service_client.table("attendance").delete().eq("student_id", student_id).execute()
+    service_client.table("students").delete().eq("student_id", student_id).execute()
+
+    if student.get("user_id"):
+        try:
+            service_client.auth.admin.delete_user(student["user_id"])
+        except Exception as exc:
+            # The student's data is already gone from our tables; surface
+            # this rather than silently leaving an orphaned auth account,
+            # but there's nothing left here worth rolling back.
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=(
+                    "Student record deleted, but the login account could not be "
+                    f"removed automatically ({exc}). Remove it manually from "
+                    "Supabase Authentication if needed."
+                ),
+            )
+
+    return {"detail": "Student deleted"}
 
 
 @router.post("/students", response_model=StudentOut, status_code=status.HTTP_201_CREATED)

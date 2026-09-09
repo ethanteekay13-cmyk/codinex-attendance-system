@@ -31,6 +31,62 @@ function renderProfile(profile) {
   document.getElementById("profile-phone").textContent = profile.phone_number;
 }
 
+// --- Weekly (Monday-Friday) grouping for the check-in history table ---
+
+function getMondayOfWeek(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const day = d.getDay(); // 0 = Sunday ... 6 = Saturday
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diffToMonday);
+  return monday;
+}
+
+function formatWeekLabel(monday) {
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  const opts = { day: "numeric", month: "short" };
+  return `${monday.toLocaleDateString(undefined, opts)} - ${friday.toLocaleDateString(undefined, opts)}`;
+}
+
+function groupRecordsByWeek(records) {
+  const groups = new Map();
+  for (const record of records) {
+    const monday = getMondayOfWeek(record.date);
+    const key = monday.toISOString().slice(0, 10);
+    if (!groups.has(key)) {
+      groups.set(key, { monday, records: [] });
+    }
+    groups.get(key).records.push(record);
+  }
+  return Array.from(groups.values()).sort((a, b) => b.monday - a.monday);
+}
+
+function renderGroupedHistoryRows(records) {
+  const groups = groupRecordsByWeek(records);
+  return groups
+    .map(
+      (group) => `
+        <tr class="week-group-header"><td colspan="3">Week of ${formatWeekLabel(group.monday)}</td></tr>
+        ${group.records
+          .map((record) => {
+            const checkInTime = record.check_in_time
+              ? new Date(record.check_in_time).toLocaleTimeString()
+              : "--";
+            return `
+              <tr>
+                <td>${record.date}</td>
+                <td class="mono">${checkInTime}</td>
+                <td><span class="status-pill status-${record.status}">${record.status}</span></td>
+              </tr>
+            `;
+          })
+          .join("")}
+      `
+    )
+    .join("");
+}
+
 function renderHistory(history) {
   const ring = document.getElementById("attendance-ring");
   const percent = Math.round(history.attendance_percentage);
@@ -51,20 +107,7 @@ function renderHistory(history) {
   }
 
   emptyState.style.display = "none";
-  tbody.innerHTML = history.records
-    .map((record) => {
-      const checkInTime = record.check_in_time
-        ? new Date(record.check_in_time).toLocaleTimeString()
-        : "--";
-      return `
-        <tr>
-          <td>${record.date}</td>
-          <td class="mono">${checkInTime}</td>
-          <td><span class="status-pill status-${record.status}">${record.status}</span></td>
-        </tr>
-      `;
-    })
-    .join("");
+  tbody.innerHTML = renderGroupedHistoryRows(history.records);
 }
 
 async function loadDashboard() {

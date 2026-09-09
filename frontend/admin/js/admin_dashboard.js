@@ -69,17 +69,22 @@ function renderStudentsTable(students) {
   tbody.innerHTML = students
     .map(
       (student) => `
-        <tr>
+        <tr class="clickable-row" data-student-id="${student.student_id}">
           <td class="mono">${student.registration_number}</td>
           <td>${student.full_name}</td>
           <td>${student.university_name}</td>
           <td>${student.email}</td>
           <td>${student.phone_number}</td>
           <td><span class="status-pill status-${student.status === "active" ? "present" : "absent"}">${student.status}</span></td>
+          <td class="mono">${student.attendance_percentage.toFixed(1)}%</td>
         </tr>
       `
     )
     .join("");
+
+  tbody.querySelectorAll("tr[data-student-id]").forEach((row) => {
+    row.addEventListener("click", () => openStudentDetail(row.dataset.studentId));
+  });
 }
 
 async function loadStudents(searchTerm = "") {
@@ -241,6 +246,8 @@ async function loadSettings() {
 
     const data = await response.json();
     document.getElementById("office-ips-input").value = data.office_ips.join(", ");
+    document.getElementById("present-cutoff-input").value = data.present_cutoff_time;
+    document.getElementById("late-cutoff-input").value = data.late_cutoff_time;
     renderOverrideStatus(data);
   } catch (error) {
     showBanner(banner, "Could not load settings.", "error");
@@ -262,6 +269,43 @@ function renderOverrideStatus(data) {
     enableBtn.style.display = "inline-flex";
     disableBtn.style.display = "none";
   }
+}
+
+function setupCutoffTimesForm() {
+  const form = document.getElementById("cutoff-times-form");
+  const banner = document.getElementById("settings-banner");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector("button[type=submit]");
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+
+    const payload = {
+      present_cutoff_time: document.getElementById("present-cutoff-input").value,
+      late_cutoff_time: document.getElementById("late-cutoff-input").value,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/settings/cutoff-times`, {
+        method: "PUT",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (await handleAuthFailure(response)) return;
+      if (!response.ok) {
+        showBanner(banner, data.detail || "Could not save the cutoff times.", "error");
+        return;
+      }
+      showBanner(banner, "Cutoff times updated. This takes effect immediately.", "success");
+    } catch (error) {
+      showBanner(banner, "Could not reach the server. Please try again.", "error");
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save cutoff times";
+    }
+  });
 }
 
 function setupSettingsPanel() {
@@ -387,6 +431,189 @@ async function loadTodayAttendance() {
   }
 }
 
+// --- Weekly (Monday-Friday) grouping for attendance history tables ---
+
+function getMondayOfWeek(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const day = d.getDay(); // 0 = Sunday ... 6 = Saturday
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diffToMonday);
+  return monday;
+}
+
+function formatWeekLabel(monday) {
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  const opts = { day: "numeric", month: "short" };
+  return `${monday.toLocaleDateString(undefined, opts)} - ${friday.toLocaleDateString(undefined, opts)}`;
+}
+
+function groupRecordsByWeek(records) {
+  const groups = new Map();
+  for (const record of records) {
+    const monday = getMondayOfWeek(record.date);
+    const key = monday.toISOString().slice(0, 10);
+    if (!groups.has(key)) {
+      groups.set(key, { monday, records: [] });
+    }
+    groups.get(key).records.push(record);
+  }
+  return Array.from(groups.values()).sort((a, b) => b.monday - a.monday);
+}
+
+function renderGroupedHistoryRows(records) {
+  if (!records.length) {
+    return "";
+  }
+  const groups = groupRecordsByWeek(records);
+  return groups
+    .map(
+      (group) => `
+        <tr class="week-group-header"><td colspan="3">Week of ${formatWeekLabel(group.monday)}</td></tr>
+        ${group.records
+          .map(
+            (record) => `
+              <tr>
+                <td>${record.date}</td>
+                <td class="mono">${record.check_in_time ? new Date(record.check_in_time).toLocaleTimeString() : "-"}</td>
+                <td><span class="status-pill status-${record.status}">${record.status}</span></td>
+              </tr>
+            `
+          )
+          .join("")}
+      `
+    )
+    .join("");
+}
+
+// --- Student detail modal ---
+
+let currentDetailStudentId = null;
+
+function openStudentDetailModal() {
+  document.getElementById("student-detail-overlay").classList.add("is-visible");
+}
+
+function closeStudentDetailModal() {
+  document.getElementById("student-detail-overlay").classList.remove("is-visible");
+  currentDetailStudentId = null;
+}
+
+async function openStudentDetail(studentId) {
+  currentDetailStudentId = studentId;
+  openStudentDetailModal();
+
+  const banner = document.getElementById("student-detail-banner");
+  banner.className = "banner";
+  document.getElementById("student-detail-name").textContent = "Loading...";
+  document.getElementById("student-detail-history-tbody").innerHTML = "";
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/students/${studentId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (await handleAuthFailure(response)) return;
+    if (!response.ok) throw new Error("Could not load this student's details");
+
+    const data = await response.json();
+    renderStudentDetail(data);
+  } catch (error) {
+    showBanner(banner, "Could not load this student's details.", "error");
+  }
+}
+
+function renderStudentDetail(data) {
+  const { student, history } = data;
+
+  document.getElementById("student-detail-name").textContent = student.full_name;
+  document.getElementById("student-detail-reg").textContent = student.registration_number;
+  document.getElementById("student-detail-university").textContent = student.university_name;
+  document.getElementById("student-detail-email").textContent = student.email;
+  document.getElementById("student-detail-phone").textContent = student.phone_number;
+
+  const percent = Math.round(history.attendance_percentage);
+  const ring = document.getElementById("student-detail-ring");
+  ring.style.setProperty("--ring-percent", String(percent));
+  document.getElementById("student-detail-ring-value").textContent = `${percent}%`;
+
+  document.getElementById("student-detail-present").textContent = history.total_present;
+  document.getElementById("student-detail-late").textContent = history.total_late;
+  document.getElementById("student-detail-absent").textContent = history.total_absent;
+
+  const tbody = document.getElementById("student-detail-history-tbody");
+  const emptyState = document.getElementById("student-detail-history-empty");
+  if (!history.records.length) {
+    tbody.innerHTML = "";
+    emptyState.style.display = "block";
+  } else {
+    emptyState.style.display = "none";
+    tbody.innerHTML = renderGroupedHistoryRows(history.records);
+  }
+}
+
+function setupStudentDetailModal() {
+  document.getElementById("student-detail-close-btn").addEventListener("click", closeStudentDetailModal);
+  document.getElementById("student-detail-overlay").addEventListener("click", (event) => {
+    if (event.target.id === "student-detail-overlay") {
+      closeStudentDetailModal();
+    }
+  });
+
+  document.getElementById("delete-history-btn").addEventListener("click", async () => {
+    if (!currentDetailStudentId) return;
+    if (!confirm("Delete all attendance history for this student? Their account stays active. This cannot be undone.")) {
+      return;
+    }
+    const banner = document.getElementById("student-detail-banner");
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/students/${currentDetailStudentId}/history`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      const data = await response.json();
+      if (await handleAuthFailure(response)) return;
+      if (!response.ok) {
+        showBanner(banner, data.detail || "Could not delete history.", "error");
+        return;
+      }
+      showBanner(banner, "Attendance history deleted.", "success");
+      openStudentDetail(currentDetailStudentId);
+      loadStudents();
+      loadDashboardSummary();
+      loadTodayAttendance();
+    } catch (error) {
+      showBanner(banner, "Could not reach the server. Please try again.", "error");
+    }
+  });
+
+  document.getElementById("delete-student-btn").addEventListener("click", async () => {
+    if (!currentDetailStudentId) return;
+    if (!confirm("Permanently delete this student, including their login and all attendance history? This cannot be undone.")) {
+      return;
+    }
+    const banner = document.getElementById("student-detail-banner");
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/students/${currentDetailStudentId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      const data = await response.json();
+      if (await handleAuthFailure(response)) return;
+      if (!response.ok) {
+        showBanner(banner, data.detail || "Could not delete this student.", "error");
+        return;
+      }
+      closeStudentDetailModal();
+      loadStudents();
+      loadDashboardSummary();
+      loadTodayAttendance();
+    } catch (error) {
+      showBanner(banner, "Could not reach the server. Please try again.", "error");
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (!localStorage.getItem(ADMIN_TOKEN_KEY)) {
     window.location.href = "login.html";
@@ -413,6 +640,8 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCsvImport();
   setupExportReport();
   setupSettingsPanel();
+  setupCutoffTimesForm();
+  setupStudentDetailModal();
 
   loadDashboardSummary();
   loadStudents();

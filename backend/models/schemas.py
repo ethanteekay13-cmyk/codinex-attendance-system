@@ -40,6 +40,7 @@ class StudentOut(StudentBase):
     photo_url: Optional[str] = None
     status: str
     created_at: datetime
+    attendance_percentage: float = 0.0
 
 
 class StudentImportRowResult(BaseModel):
@@ -122,12 +123,19 @@ class SystemSettingsOut(BaseModel):
     wifi_override_expires_at: Optional[datetime] = None
     wifi_override_enabled_by: Optional[str] = None
     wifi_override_enabled_at: Optional[datetime] = None
+    present_cutoff_time: str
+    late_cutoff_time: str
 
 
 class UpdateOfficeIpsRequest(BaseModel):
     office_ips: List[str] = Field(
         description="Full replacement list of allowed office IP addresses"
     )
+
+
+class UpdateCutoffTimesRequest(BaseModel):
+    present_cutoff_time: str = Field(description="24-hour HH:MM, e.g. '09:00'")
+    late_cutoff_time: str = Field(description="24-hour HH:MM, e.g. '09:30'")
 
 
 class TodayAttendanceRow(BaseModel):
@@ -137,6 +145,11 @@ class TodayAttendanceRow(BaseModel):
     check_in_time: datetime
     status: str
     via_wifi_override: bool
+
+
+class StudentDetailResponse(BaseModel):
+    student: StudentOut
+    history: AttendanceHistoryResponse
 
 
 # --- Password change ---

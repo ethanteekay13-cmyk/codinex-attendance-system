@@ -123,3 +123,26 @@ def disable_wifi_override() -> dict:
     """Manually turns the Wi-Fi override off early (before its own expiry)."""
     client = get_service_client()
     return _disable_wifi_override_row(client)
+
+
+def update_cutoff_times(present_cutoff_time: str, late_cutoff_time: str) -> dict:
+    """Updates the present/late check-in cutoff times used by check-in."""
+    client = get_service_client()
+    result = (
+        client.table("system_settings")
+        .update(
+            {
+                "present_cutoff_time": present_cutoff_time,
+                "late_cutoff_time": late_cutoff_time,
+                "updated_at": datetime.utcnow().isoformat(),
+            }
+        )
+        .eq("id", SETTINGS_ROW_ID)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not update the cutoff times",
+        )
+    return result.data[0]

@@ -543,6 +543,83 @@ table.data-table {
   letter-spacing: 0.08em;
 }
 
+/* --- Modal (student detail view) --- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.modal-overlay.is-visible {
+  display: flex;
+}
+
+.modal-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+  width: 100%;
+  max-width: 640px;
+  margin-top: var(--space-6);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 var(--space-2);
+}
+
+.modal-close-btn:hover {
+  color: var(--color-text);
+}
+
+.modal-danger-zone {
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+}
+
+.modal-danger-zone h3 {
+  color: var(--color-danger);
+}
+
+/* --- Week group header (attendance history grouping) --- */
+
+.week-group-header td {
+  background: var(--color-surface-sunken);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.5rem var(--space-3);
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
 /* --- Utility --- */
 
 .flex-row {
