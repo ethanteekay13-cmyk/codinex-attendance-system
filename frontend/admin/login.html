@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Sign In - Codinex Attendance System</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div class="eyebrow">Codinex Computers Ltd</div>
+      <h1>Admin sign in</h1>
+      <p>Sign in with your Codinex admin account to manage students and attendance.</p>
+
+      <div id="login-banner" class="banner" role="alert"></div>
+
+      <form id="admin-login-form" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" id="login-submit" class="btn btn-primary btn-full">Sign in</button>
+      </form>
+
+      <p class="mt-6" style="text-align: center;">
+        Are you a student? <a href="../student/login.html">Go to student sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/admin_auth.js"></script>
+</body>
+</html>

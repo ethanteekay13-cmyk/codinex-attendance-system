@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check In - Codinex Attendance System</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    .scan-shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-5);
+    }
+
+    .scan-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-7) var(--space-6);
+      text-align: center;
+    }
+
+    .scan-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .status-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .status-icon.is-success {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+    }
+
+    .status-icon.is-error {
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+    }
+
+    .status-icon.is-neutral {
+      background: var(--color-surface-sunken);
+      color: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="scan-shell">
+    <div class="scan-card">
+
+      <div id="view-loading" class="scan-view" style="display: flex;">
+        <div class="status-icon is-neutral"><span class="loading-dot"></span></div>
+        <h2>Recording your check-in</h2>
+        <p>Please wait a moment.</p>
+      </div>
+
+      <div id="view-success" class="scan-view">
+        <div class="status-icon is-success">OK</div>
+        <h2>You are checked in</h2>
+        <p>
+          Status: <span id="success-status" class="status-pill status-present">present</span>
+          &nbsp;at <span id="success-time" class="mono"></span>
+        </p>
+        <a href="dashboard.html" class="btn btn-primary btn-full">Go to my dashboard</a>
+      </div>
+
+      <div id="view-error" class="scan-view">
+        <div class="status-icon is-error">!</div>
+        <h2>Check-in did not go through</h2>
+        <p id="error-message">Something went wrong.</p>
+        <button id="retry-btn" class="btn btn-primary btn-full">Try again</button>
+        <a href="dashboard.html" class="btn btn-outline btn-full">Go to my dashboard</a>
+      </div>
+
+      <div id="view-no-token" class="scan-view">
+        <div class="status-icon is-neutral">?</div>
+        <h2>No check-in code found</h2>
+        <p>Scan the QR code displayed on the kiosk screen to check in.</p>
+        <a href="dashboard.html" class="btn btn-primary btn-full">Go to my dashboard</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/student_scan.js"></script>
+</body>
+</html>

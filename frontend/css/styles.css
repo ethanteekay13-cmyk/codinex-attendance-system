@@ -1,0 +1,613 @@
+/*
+  Codinex Attendance System - shared stylesheet.
+
+  Design language: an engineering / circuit-board feel appropriate for a
+  computing company - deep indigo surfaces, a copper-amber signature
+  accent, IBM Plex for type (chosen for its own computing heritage), and
+  a recurring ring motif used both for the kiosk's 15 second countdown
+  and a student's attendance percentage, so the same shape carries two
+  related meanings across the product.
+*/
+
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+:root {
+  /* Color */
+  --color-bg: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #eef1f8;
+  --color-primary: #1e2a4a;
+  --color-primary-light: #2f3e64;
+  --color-accent: #e8a33d;
+  --color-accent-dark: #c47f1d;
+  --color-text: #1a2333;
+  --color-text-muted: #5b6478;
+  --color-text-inverse: #f5f7fb;
+  --color-success: #1e8f6f;
+  --color-success-bg: #e5f5f0;
+  --color-warning: #e8a33d;
+  --color-warning-bg: #fbf0dd;
+  --color-danger: #d64550;
+  --color-danger-bg: #fbe7e8;
+  --color-border: #e1e5ef;
+
+  /* Kiosk dark theme */
+  --color-kiosk-bg: #0f172a;
+  --color-kiosk-surface: #16213e;
+  --color-kiosk-border: #26314f;
+  --color-kiosk-text: #f5f7fb;
+  --color-kiosk-text-muted: #93a0bd;
+
+  /* Type */
+  --font-display: "Sora", "IBM Plex Sans", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radius / shadow */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(26, 35, 51, 0.06);
+  --shadow-md: 0 8px 24px rgba(26, 35, 51, 0.08);
+  --shadow-lg: 0 16px 40px rgba(26, 35, 51, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  color: var(--color-primary);
+  margin: 0 0 var(--space-3);
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+p {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Focus visibility, kept everywhere, including custom components */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* --- Layout shells --- */
+
+.page-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.topbar .brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.topbar .brand-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  box-shadow: 0 0 0 4px rgba(232, 163, 61, 0.25);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.topbar-actions .user-name {
+  font-size: 0.9rem;
+  color: rgba(245, 247, 251, 0.8);
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background:
+    radial-gradient(circle at 15% 15%, rgba(232, 163, 61, 0.14), transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(30, 42, 74, 0.1), transparent 45%),
+    var(--color-bg);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-7) var(--space-6);
+}
+
+.auth-card .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-dark);
+  margin-bottom: var(--space-2);
+}
+
+/* --- Buttons --- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.7rem 1.3rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  text-decoration: none;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-light);
+}
+
+.btn-accent {
+  background: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.btn-accent:hover {
+  background: var(--color-accent-dark);
+  color: var(--color-text-inverse);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-primary);
+}
+
+.btn-outline:hover {
+  border-color: var(--color-primary);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- Forms --- */
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--color-accent);
+}
+
+.field .hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* --- Cards --- */
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  padding: var(--space-5);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* --- Metric cards (admin dashboard) --- */
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--color-accent);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+
+.metric-card.is-success {
+  border-left-color: var(--color-success);
+}
+
+.metric-card.is-warning {
+  border-left-color: var(--color-warning);
+}
+
+.metric-card.is-danger {
+  border-left-color: var(--color-danger);
+}
+
+.metric-card .metric-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.metric-card .metric-value {
+  font-family: var(--font-mono);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* --- Status pills --- */
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+}
+
+.status-pill.status-present {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.status-pill.status-late {
+  background: var(--color-warning-bg);
+  color: var(--color-accent-dark);
+}
+
+.status-pill.status-absent {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* --- Tables --- */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 0.75rem var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.data-table th {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-surface-sunken);
+}
+
+/* --- Banners (feedback) --- */
+
+.banner {
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-4);
+  display: none;
+}
+
+.banner.is-visible {
+  display: block;
+}
+
+.banner.banner-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.banner.banner-error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.banner.banner-info {
+  background: var(--color-surface-sunken);
+  color: var(--color-primary);
+}
+
+/* --- Ring component (shared signature element) ---
+   Used for the kiosk's 15 second countdown and the student dashboard's
+   attendance percentage. Consumers set --ring-percent (0-100) and
+   --ring-color to drive the fill. */
+
+.ring {
+  --ring-percent: 0;
+  --ring-color: var(--color-accent);
+  --ring-track: var(--color-border);
+  --ring-size: 140px;
+  --ring-thickness: 10px;
+  width: var(--ring-size);
+  height: var(--ring-size);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: conic-gradient(
+    var(--ring-color) calc(var(--ring-percent) * 1%),
+    var(--ring-track) 0
+  );
+  transition: background 0.3s ease;
+}
+
+.ring::before {
+  content: "";
+  position: absolute;
+  inset: var(--ring-thickness);
+  border-radius: var(--radius-full);
+  background: var(--ring-inner-bg, var(--color-surface));
+}
+
+.ring-value {
+  position: relative;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: center;
+  z-index: 1;
+}
+
+.ring-value .ring-value-number {
+  display: block;
+  font-size: 1.6rem;
+}
+
+.ring-value .ring-value-label {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* --- Utility --- */
+
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-4 {
+  margin-top: var(--space-4);
+}
+
+.mt-6 {
+  margin-top: var(--space-6);
+}
+
+.search-input {
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  min-width: 240px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-7) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.empty-state h3 {
+  color: var(--color-text);
+}
+
+.loading-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}

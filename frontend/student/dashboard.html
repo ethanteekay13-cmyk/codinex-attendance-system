@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Attendance - Codinex Attendance System</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    .profile-row {
+      display: flex;
+      gap: var(--space-6);
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: var(--space-6);
+    }
+
+    #attendance-ring {
+      --ring-size: 130px;
+      --ring-thickness: 12px;
+    }
+
+    #attendance-ring-value {
+      font-size: 1.4rem;
+    }
+
+    .profile-details {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .profile-details dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-2) var(--space-4);
+      margin: 0;
+    }
+
+    .profile-details dt {
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+    }
+
+    .profile-details dd {
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: var(--space-5);
+      margin-top: var(--space-4);
+    }
+
+    .stat-row div {
+      text-align: center;
+    }
+
+    .stat-row .stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .stat-row .stat-label {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        Codinex Attendance System
+      </div>
+      <div class="topbar-actions">
+        <span class="user-name">Hi, <strong id="student-name">Student</strong></span>
+        <button id="logout-btn" class="btn btn-outline" style="color: var(--color-text-inverse); border-color: rgba(245,247,251,0.35);">Sign out</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <h1>My attendance</h1>
+      <p>Your check-in history and overall attendance percentage.</p>
+
+      <div id="dashboard-banner" class="banner banner-error">Could not load your attendance data. Please refresh the page.</div>
+
+      <div class="card">
+        <div class="profile-row">
+          <div id="attendance-ring" class="ring">
+            <div class="ring-value">
+              <span id="attendance-ring-value" class="ring-value-number">0%</span>
+              <span class="ring-value-label">attendance</span>
+            </div>
+          </div>
+
+          <div class="profile-details">
+            <dl>
+              <dt>Registration number</dt>
+              <dd id="profile-registration-number" class="mono"></dd>
+              <dt>University</dt>
+              <dd id="profile-university"></dd>
+              <dt>Email</dt>
+              <dd id="profile-email"></dd>
+              <dt>Phone number</dt>
+              <dd id="profile-phone"></dd>
+            </dl>
+
+            <div class="stat-row">
+              <div>
+                <div class="stat-value" id="stat-present">0</div>
+                <div class="stat-label">Present</div>
+              </div>
+              <div>
+                <div class="stat-value" id="stat-late">0</div>
+                <div class="stat-label">Late</div>
+              </div>
+              <div>
+                <div class="stat-value" id="stat-absent">0</div>
+                <div class="stat-label">Absent</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-6">
+        <div class="card-header">
+          <h2>Check-in history</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Check-in time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+        <div id="history-empty" class="empty-state" style="display: none;">
+          <h3>No check-ins yet</h3>
+          <p>Scan the QR code at the Codinex office to record your first check-in.</p>
+        </div>
+      </div>
+
+      <div class="card mt-6">
+        <div class="card-header">
+          <h2>Change password</h2>
+        </div>
+        <p>Update the password an admin set for you when you were registered.</p>
+        <div id="change-password-banner" class="banner"></div>
+        <form id="change-password-form" novalidate>
+          <div class="field">
+            <label for="current-password">Current password</label>
+            <input type="password" id="current-password" autocomplete="current-password" required />
+          </div>
+          <div class="field">
+            <label for="new-password">New password</label>
+            <input type="password" id="new-password" minlength="8" autocomplete="new-password" required />
+          </div>
+          <div class="field">
+            <label for="confirm-new-password">Confirm new password</label>
+            <input type="password" id="confirm-new-password" minlength="8" autocomplete="new-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Update password</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/student_dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Codinex Attendance System</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    .summary-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+    }
+
+    #summary-ring {
+      --ring-size: 130px;
+      --ring-thickness: 12px;
+    }
+
+    #summary-ring-value {
+      font-size: 1.4rem;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+    }
+
+    .file-input-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.7rem 1.3rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-primary);
+      cursor: pointer;
+    }
+
+    .file-input-label:hover {
+      border-color: var(--color-primary);
+    }
+
+    #csv-import-input {
+      display: none;
+    }
+
+    #add-student-panel {
+      display: none;
+      margin-bottom: var(--space-6);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0 var(--space-4);
+    }
+
+    @media (max-width: 640px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        Codinex Attendance System
+      </div>
+      <div class="topbar-actions">
+        <span class="user-name">Signed in as <strong id="admin-name">Admin</strong></span>
+        <button id="logout-btn" class="btn btn-outline" style="color: var(--color-text-inverse); border-color: rgba(245,247,251,0.35);">Sign out</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="flex-between">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Today's attendance overview for Codinex internship students.</p>
+        </div>
+      </div>
+
+      <div id="dashboard-banner" class="banner banner-error">Could not load the latest dashboard data.</div>
+
+      <div class="summary-row">
+        <div id="summary-ring" class="ring">
+          <div class="ring-value">
+            <span id="summary-ring-value" class="ring-value-number">0%</span>
+            <span class="ring-value-label">checked in</span>
+          </div>
+        </div>
+
+        <div class="metric-grid" style="flex: 1; margin-bottom: 0;">
+          <div class="metric-card is-success">
+            <div class="metric-label">Present</div>
+            <div class="metric-value" id="metric-present">0</div>
+          </div>
+          <div class="metric-card is-warning">
+            <div class="metric-label">Late</div>
+            <div class="metric-value" id="metric-late">0</div>
+          </div>
+          <div class="metric-card is-danger">
+            <div class="metric-label">Absent</div>
+            <div class="metric-value" id="metric-absent">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Total students</div>
+            <div class="metric-value" id="metric-total">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button id="launch-kiosk-btn" class="btn btn-accent">Launch kiosk view</button>
+        <label for="csv-import-input" class="file-input-label">Import students (CSV)</label>
+        <input type="file" id="csv-import-input" accept=".csv" />
+        <button id="export-report-btn" class="btn btn-outline">Export report</button>
+        <button id="toggle-add-student" class="btn btn-outline">Add student</button>
+      </div>
+
+      <div id="import-banner" class="banner"></div>
+
+      <div id="add-student-panel" class="card">
+        <div class="card-header">
+          <h2>Add a student</h2>
+        </div>
+        <div id="add-student-banner" class="banner"></div>
+        <form id="add-student-form" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="new-registration-number">Registration number</label>
+              <input type="text" id="new-registration-number" required />
+            </div>
+            <div class="field">
+              <label for="new-full-name">Full name</label>
+              <input type="text" id="new-full-name" required />
+            </div>
+            <div class="field">
+              <label for="new-university-name">University</label>
+              <input type="text" id="new-university-name" required />
+            </div>
+            <div class="field">
+              <label for="new-phone-number">Phone number</label>
+              <input type="tel" id="new-phone-number" required />
+            </div>
+            <div class="field">
+              <label for="new-email">Email address</label>
+              <input type="email" id="new-email" required />
+            </div>
+            <div class="field">
+              <label for="new-password">Initial password</label>
+              <input type="password" id="new-password" minlength="8" required />
+              <div class="hint">At least 8 characters. The student can change this after signing in.</div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Add student</button>
+        </form>
+      </div>
+
+      <div class="card mt-6">
+        <div class="card-header">
+          <h2>Check-in settings</h2>
+        </div>
+        <div id="settings-banner" class="banner"></div>
+
+        <form id="office-ips-form" novalidate>
+          <div class="field">
+            <label for="office-ips-input">Office IP addresses</label>
+            <input type="text" id="office-ips-input" placeholder="e.g. 41.210.1.1, 41.210.1.2" />
+            <div class="hint">Comma-separated. Only check-ins from these IPs are accepted. Changes apply immediately, no redeploy needed.</div>
+          </div>
+          <button type="submit" class="btn btn-primary">Save IP addresses</button>
+        </form>
+
+        <div class="mt-6">
+          <h3>Wi-Fi override</h3>
+          <p id="override-status" class="text-muted"></p>
+          <div class="flex-row">
+            <button id="enable-override-btn" class="btn btn-accent">Allow check-in from any IP today</button>
+            <button id="disable-override-btn" class="btn btn-outline" style="display: none;">Turn off override now</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-6">
+        <div class="card-header">
+          <h2>Today's check-ins</h2>
+        </div>
+        <div id="today-attendance-banner" class="banner"></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Full name</th>
+                <th>Registration number</th>
+                <th>Check-in time</th>
+                <th>Status</th>
+                <th>Flag</th>
+              </tr>
+            </thead>
+            <tbody id="today-attendance-tbody"></tbody>
+          </table>
+        </div>
+        <div id="today-attendance-empty" class="empty-state" style="display: none;">
+          <h3>No check-ins yet today</h3>
+          <p>Check-ins will appear here as students scan in.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Students</h2>
+          <input type="search" id="student-search" class="search-input" placeholder="Search by name, registration number, or email" />
+        </div>
+        <div id="students-banner" class="banner"></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Registration number</th>
+                <th>Full name</th>
+                <th>University</th>
+                <th>Email</th>
+                <th>Phone number</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="students-tbody"></tbody>
+          </table>
+        </div>
+        <div id="students-empty" class="empty-state" style="display: none;">
+          <h3>No students found</h3>
+          <p>Add a student or adjust your search.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/admin_dashboard.js"></script>
+</body>
+</html>

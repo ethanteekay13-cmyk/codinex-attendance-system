@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+supabase
+pydantic
+email-validator
+python-dotenv
+qrcode
+python-multipart
+PyJWT
+tzdata

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check-in Kiosk - Codinex Attendance System</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      background: var(--color-kiosk-bg);
+    }
+
+    .kiosk-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-kiosk-text);
+      padding: var(--space-7);
+      gap: var(--space-6);
+    }
+
+    .kiosk-header {
+      text-align: center;
+    }
+
+    .kiosk-header .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+      margin-bottom: var(--space-2);
+    }
+
+    .kiosk-header h1 {
+      color: var(--color-kiosk-text);
+      font-size: 2.4rem;
+    }
+
+    .kiosk-stage {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .qr-panel {
+      background: var(--color-kiosk-surface);
+      border: 1px solid var(--color-kiosk-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-4);
+      box-shadow: 0 0 60px rgba(232, 163, 61, 0.08);
+    }
+
+    #qr-code-container {
+      background: var(--color-kiosk-text);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      line-height: 0;
+    }
+
+    .token-label {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+      color: var(--color-kiosk-text-muted);
+    }
+
+    #token-text {
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+
+    .countdown-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    #countdown-ring {
+      --ring-size: 200px;
+      --ring-thickness: 14px;
+      --ring-color: var(--color-accent);
+      --ring-track: var(--color-kiosk-border);
+      --ring-inner-bg: var(--color-kiosk-bg);
+    }
+
+    #countdown-ring .ring-value-number {
+      color: var(--color-kiosk-text);
+      font-size: 3rem;
+    }
+
+    #countdown-ring .ring-value-label {
+      color: var(--color-kiosk-text-muted);
+    }
+
+    .countdown-caption {
+      color: var(--color-kiosk-text-muted);
+      text-align: center;
+      max-width: 260px;
+      font-size: 0.95rem;
+    }
+
+    .kiosk-footer {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      flex-wrap: wrap;
+      justify-content: center;
+      border-top: 1px solid var(--color-kiosk-border);
+      padding-top: var(--space-5);
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .live-count {
+      text-align: center;
+    }
+
+    #live-count-value {
+      font-family: var(--font-mono);
+      font-size: 2.4rem;
+      font-weight: 600;
+      color: var(--color-kiosk-text);
+    }
+
+    #live-count-note {
+      color: var(--color-kiosk-text-muted);
+      font-size: 0.85rem;
+      max-width: 320px;
+    }
+
+    #connection-status {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--color-success);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    #connection-status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: var(--color-success);
+    }
+
+    #connection-status.is-offline {
+      color: var(--color-danger);
+    }
+
+    #connection-status.is-offline::before {
+      background: var(--color-danger);
+    }
+  </style>
+</head>
+<body>
+  <div class="kiosk-shell">
+    <div class="kiosk-header">
+      <div class="eyebrow">Codinex Computers Ltd</div>
+      <h1>Scan in for today's session</h1>
+    </div>
+
+    <div class="kiosk-stage">
+      <div class="qr-panel">
+        <div id="qr-code-container"></div>
+        <div class="token-label">Code <span id="token-text">------------</span></div>
+      </div>
+
+      <div class="countdown-panel">
+        <div id="countdown-ring" class="ring">
+          <div class="ring-value">
+            <span id="countdown-value" class="ring-value-number">120</span>
+            <span class="ring-value-label">seconds left</span>
+          </div>
+        </div>
+        <p class="countdown-caption">
+          This code refreshes every 2 minutes. Scan it with your phone camera, then sign in to
+          confirm your check-in.
+        </p>
+      </div>
+    </div>
+
+    <div class="kiosk-footer">
+      <div class="live-count">
+        <div id="live-count-value">--</div>
+        <div id="live-count-note">checked in today</div>
+      </div>
+      <div id="connection-status">Live</div>
+    </div>
+  </div>
+
+  <script src="js/kiosk.js"></script>
+</body>
+</html>
